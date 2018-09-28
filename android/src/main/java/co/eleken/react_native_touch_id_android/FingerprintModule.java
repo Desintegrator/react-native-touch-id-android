@@ -101,9 +101,8 @@ public class FingerprintModule extends ReactContextBaseJavaModule {
                 return;
             }
             
-            if (mReactContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_FINGERPRINT) ||
-                ((FingerprintManager) mReactContext.getSystemService(Context.FINGERPRINT_SERVICE)).isHardwareDetected()) {
-                if (((FingerprintManager) mReactContext.getSystemService(Context.FINGERPRINT_SERVICE)).hasEnrolledFingerprints()) {
+            if (mReactContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_FINGERPRINT) || isHardwareDetected() ) {
+                if( hasEnrolledFingerprints() ) {
                     sendResponse("ok", null, promise);
                 } else {
                     sendResponse("failed", "You have fingerprint sensor, but you should set it enabled in your settings to use with this app", promise);
@@ -111,8 +110,6 @@ public class FingerprintModule extends ReactContextBaseJavaModule {
             } else {
                 sendResponse("failed", "You don\'t have appropriate hardware", promise);
             }
-        } else {
-            sendResponse("failed", "You don\'t have appropriate hardware", promise);
         }
     }
     
@@ -120,7 +117,21 @@ public class FingerprintModule extends ReactContextBaseJavaModule {
         if (ActivityCompat.checkSelfPermission(mReactContext, Manifest.permission.USE_FINGERPRINT) != PackageManager.PERMISSION_GRANTED) {
             return false;
         }
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && (mReactContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_FINGERPRINT) || ((FingerprintManager) mReactContext.getSystemService(Context.FINGERPRINT_SERVICE)).isHardwareDetected());
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && ( mReactContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_FINGERPRINT )
+                    || isHardwareDetected() );
+    }
+
+    @android.support.annotation.RequiresApi( api = Build.VERSION_CODES.M )
+    private boolean isHardwareDetected() {
+        FingerprintManager manager = (FingerprintManager) mReactContext.getSystemService(Context.FINGERPRINT_SERVICE);
+        return manager != null && manager.isHardwareDetected();
+    }
+
+    @android.support.annotation.RequiresApi( api = Build.VERSION_CODES.M )
+    private boolean hasEnrolledFingerprints() {
+        FingerprintManager manager = (FingerprintManager) mReactContext.getSystemService(Context.FINGERPRINT_SERVICE);
+        return manager != null && manager.hasEnrolledFingerprints();
     }
     
     private void sendResponse(String status, String message, Promise promise) {
