@@ -122,13 +122,11 @@ public class FingerprintModule extends ReactContextBaseJavaModule {
                     || isHardwareDetected() );
     }
 
-    @android.support.annotation.RequiresApi( api = Build.VERSION_CODES.M )
     private boolean isHardwareDetected() {
         FingerprintManager manager = (FingerprintManager) mReactContext.getSystemService(Context.FINGERPRINT_SERVICE);
         return manager != null && manager.isHardwareDetected();
     }
 
-    @android.support.annotation.RequiresApi( api = Build.VERSION_CODES.M )
     private boolean hasEnrolledFingerprints() {
         FingerprintManager manager = (FingerprintManager) mReactContext.getSystemService(Context.FINGERPRINT_SERVICE);
         return manager != null && manager.hasEnrolledFingerprints();
