@@ -57,9 +57,16 @@ public class FingerprintModule extends ReactContextBaseJavaModule {
         }
         
         Reprint.authenticate(new AuthenticationListener() {
+
+            boolean canSendResponse = true;
+
             @Override
             public void onSuccess(int moduleTag) {
-                sendResponse("ok", null, promise);
+                if( canSendResponse ) {
+                    sendResponse("ok", null, promise);
+                    canSendResponse = false;
+                }
+
             }
             @Override
             public void onFailure(final AuthenticationFailureReason failureReason, final boolean fatal,
@@ -70,7 +77,10 @@ public class FingerprintModule extends ReactContextBaseJavaModule {
                         final Thread t = new Thread(new Runnable() {
                             public void run() {
                                 try {
-                                    sendResponse("failed", "LOCKED_OUT", promise);
+                                    if( canSendResponse ) {
+                                        sendResponse("failed", "LOCKED_OUT", promise);
+                                        canSendResponse = false;
+                                    }
                                 } catch (Exception e) {
                                     Log.d("exceptionLog", errorMessage.toString());
                                 }
@@ -78,7 +88,10 @@ public class FingerprintModule extends ReactContextBaseJavaModule {
                         });
                         t.start();
                     } else {
-                        sendResponse("failed", errorMessage.toString(), promise);
+                        if( canSendResponse ) {
+                            sendResponse("failed", errorMessage.toString(), promise);
+                            canSendResponse = false;
+                        }
                     }
                 }
             }
