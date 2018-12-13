@@ -1,3 +1,5 @@
+# QStudio.org
+
 # react-native-touch-id-android
 
 
@@ -10,7 +12,7 @@ Fingerprint identity for Android based on https://github.com/ajalt/reprint
 
 
 ## NOTES:
-- current latest version: v0.1.x
+- current latest version: v0.2.x
 - for RN < 0.47.0, use react-native-touch-id-android@**0.0.6**
 
 
