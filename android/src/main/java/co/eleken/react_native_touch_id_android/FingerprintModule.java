@@ -14,7 +14,9 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.github.ajalt.reprint.core.AuthenticationFailureReason;
 import com.github.ajalt.reprint.core.AuthenticationListener;
 import com.github.ajalt.reprint.core.Reprint;
@@ -24,8 +26,7 @@ import com.github.ajalt.reprint.core.Reprint;
  */
 
 public class FingerprintModule extends ReactContextBaseJavaModule {
-    
-    
+
     private WritableMap response;
     
     private final ReactApplicationContext mReactContext;
@@ -41,46 +42,38 @@ public class FingerprintModule extends ReactContextBaseJavaModule {
     }
     
     @ReactMethod
-    public void requestTouch(final Promise promise) {
+    public void requestTouch() {
         
         response = Arguments.createMap();
         if (!isSensorAvailable()) {
-            sendResponse("failed", "Finger sensor is not available", promise);
+            sendResponseEvent("failed", "Finger sensor is not available" );
             return;
         }
         
         Activity currentActivity = getCurrentActivity();
         
         if (currentActivity == null) {
-            sendResponse("failed", "Can't find current Activity", promise);
+            sendResponseEvent("failed", "Can't find current Activity" );
             return;
         }
         
         Reprint.authenticate(new AuthenticationListener() {
 
-            boolean canSendResponse = true;
-
             @Override
             public void onSuccess(int moduleTag) {
-                if( canSendResponse ) {
-                    sendResponse("ok", null, promise);
-                    canSendResponse = false;
-                }
+                sendResponseEvent("ok", null );
 
             }
             @Override
             public void onFailure(final AuthenticationFailureReason failureReason, final boolean fatal,
-                                  final CharSequence errorMessage, int moduleTag, int errorCode) {
+                                  final CharSequence errorMessage, final int moduleTag, final int errorCode) {
                 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                     if(failureReason == AuthenticationFailureReason.LOCKED_OUT) {
                         final Thread t = new Thread(new Runnable() {
                             public void run() {
                                 try {
-                                    if( canSendResponse ) {
-                                        sendResponse("failed", "LOCKED_OUT", promise);
-                                        canSendResponse = false;
-                                    }
+                                    sendFailedResponseEvent("LOCKED_OUT", failureReason, fatal, moduleTag, errorCode );
                                 } catch (Exception e) {
                                     Log.d("exceptionLog", errorMessage.toString());
                                 }
@@ -88,13 +81,11 @@ public class FingerprintModule extends ReactContextBaseJavaModule {
                         });
                         t.start();
                     } else {
-                        if( canSendResponse ) {
-                            sendResponse("failed", errorMessage.toString(), promise);
-                            canSendResponse = false;
-                        }
+                        sendFailedResponseEvent( errorMessage.toString(), failureReason, fatal, moduleTag, errorCode );
                     }
                 }
             }
+
         });
     }
     
@@ -151,5 +142,39 @@ public class FingerprintModule extends ReactContextBaseJavaModule {
         response.putString("status", status);
         response.putString("error", message);
         promise.resolve(response);
+    }
+
+    private void sendResponseEvent(String status, String message) {
+        Reprint.cancelAuthentication();
+
+        response = Arguments.createMap();
+        response.putString("status", status);
+        response.putString("error", message);
+        dispatchEvent( "FingerprintResponse", response );
+    }
+
+    private void sendFailedResponseEvent(String message, final AuthenticationFailureReason failureReason,
+                                         final boolean fatal, int moduleTag, int errorCode )
+    {
+        if( fatal ) {
+            Reprint.cancelAuthentication();
+        }
+
+        response = Arguments.createMap();
+        response.putString("status", "failed");
+        response.putString("error", message);
+        if( failureReason != null ) {
+            response.putString("failureReason", failureReason.toString());
+        }
+        response.putBoolean("fatal", fatal);
+        response.putInt("moduleTag", moduleTag);
+        response.putInt("errorCode", errorCode);
+        dispatchEvent( "FingerprintResponse", response );
+    }
+
+    public void dispatchEvent(String eventName, ReadableMap params) {
+        mReactContext
+                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                .emit(eventName, params);
     }
 }
