@@ -1,6 +1,6 @@
 {
   "name": "react-native-touch-id-android",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "touchID for React Native (Android)",
   "dependencies": {},
   "devDependencies": {},
@@ -15,12 +15,6 @@
   "license": "MIT",
   "main": "index.js",
   "readme": "README.md",
-  "maintainers": [
-    {
-      "name": "Vasiliev90",
-      "email": "mikhail.vasiliev@eleken.co"
-    }
-  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
